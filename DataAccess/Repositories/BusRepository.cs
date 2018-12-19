@@ -2,6 +2,7 @@
 using DataAccess.Interfaces;
 using Entities;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DataAccess
@@ -26,6 +27,12 @@ namespace DataAccess
                 .ExecuteAsync(sql: "[dbo].[spAddBus]", param: parameters, commandType: CommandType.StoredProcedure)
                 .ConfigureAwait(false))
                 .ConfigureAwait(false);
+        }
+
+        public async Task<IQueryable<BusModel>> GetBuses()
+        {
+            var result = await WithConnection(async c => await c.QueryAsync<BusModel>(sql: "[dbo].[spGetBuses]", param: null, commandType: CommandType.StoredProcedure).ConfigureAwait(false)).ConfigureAwait(false);
+            return result.AsQueryable();
         }
     }
 }

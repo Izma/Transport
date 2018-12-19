@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DataAccess
+namespace Core
 {
-    public interface IBusRepository
+    public interface IBus
     {
-        Task<int> AddBus(BusModel model);
+        Task<int> SaveBus(BusModel model);
         Task<IQueryable<BusModel>> GetBuses();
     }
 }

@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.Swagger;
+using DataAccess.Interfaces;
+using DataAccess.Repositories;
+using DataAccess;
+using Newtonsoft.Json;
+using Core;
 
 namespace Transport
 {
@@ -25,7 +24,34 @@ namespace Transport
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info
+                {
+                    Version = "v1",
+                    Title = "Transport API",
+                    Description = "Transport API",
+                    TermsOfService = "None",
+                    Contact = new Contact
+                    {
+                        Name = "Ismael López Aguilar",
+                        Email = "ismael.lopez.aguilar@gmail.com",
+                        Url = "cunit.com.mx"
+                    },
+                    License = new License
+                    {
+                        Name = "Use under LICX",
+                        Url = "https://example.com/license"
+                    }
+
+                });
+            });
+            var mvcCoreBuilder = services.AddMvcCore().AddFormatterMappings().AddJsonFormatters().AddJsonOptions(options => options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore).AddCors();
+            services.AddSingleton<IConnectionFactory>(_ => new ConnectionFactory(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddTransient<IBusRepository, BusRepository>();
+            services.AddTransient<IBus, Bus>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -39,6 +65,20 @@ namespace Transport
             {
                 app.UseHsts();
             }
+            app.UseSwagger();
+            app.UseCors(options =>
+            {
+                options.AllowAnyHeader();
+                options.AllowAnyMethod();
+                options.AllowAnyOrigin();
+                options.AllowCredentials();
+            });
+            app.UseMvc();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "PoS API V1");
+                c.RoutePrefix = string.Empty;
+            });
 
             app.UseHttpsRedirection();
             app.UseMvc();
